@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+indent() {
+    sed -u 's/^/       /'
+}
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+ENV_DIR=$3
+
+
+#to install custom packages
+echo "-----> Installing custom package"
+curl -L https://mypackage.url | tar xz -C .heroku
+
+
+# Custom Procfile
+PROCFILE=$(cat "${ENV_DIR}/PROCFILE")
+if ! [[ -z "${PROCFILE}" ]]; then
+    echo "PROCFILE Configuration Found" | indent
+
+    cp "${BUILD_DIR}/${PROCFILE}" "${BUILD_DIR}/Procfile"
+
+    if ! [ $? ]; then
+        echo "FAILED to copy a Procfile" | indent
+    else
+        echo "Copied ${PROCFILE} as Procfile successfully" | indent
+    fi
+
+    #copy app.json also if we have any 
+    APP_DIR=$(dirname "${BUILD_DIR}/${PROCFILE}") 
+
+    if [[ -f "${APP_DIR}/app.json" ]]; then
+        cp "${APP_DIR}/app.json" "${BUILD_DIR}/app.json"
+        echo "Copied ${APP_DIR}/app.json as app.json successfully" | indent
+    fi
+fi
+
+
+# Custom robots.txt
+ROBOTXT=$(cat "${ENV_DIR}/ROBOTXT")
+
+if ! [[ -z "${ROBOTXT}" ]]; then
+    echo "ROBOTXT Configuration Found" | indent
+
+    cp "${BUILD_DIR}/${ROBOTXT}" "${BUILD_DIR}/public/robots.txt"
+
+    if ! [ $? ]; then
+        echo "FAILED to copy a robots.txt" | indent
+    else
+        echo "Copied ${ROBOTXT} as robots.txt successfully" | indent
+    fi
+fi
+#or you can also have content appended here but above provide more flexibility
+# if [ "$HEROKU_ENV" = "staging" ]; then
+#     echo "User-agent: *" > public/robots.txt
+#     echo "Disallow: /" >> public/robots.txt
+# fi
+
+
+#writing credentials from ENV
+PRIVATE_KEY=$(cat "${ENV_DIR}/PRIVATE_KEY")
+PRIVATE_KEY_PATH=$(cat "${ENV_DIR}/PRIVATE_KEY_PATH")
+echo "-----> Creating PEM file from ENV ${PRIVATE_KEY} to directory ${PRIVATE_KEY_PATH}"
+echo "$PRIVATE_KEY" > "$PRIVATE_KEY_PATH" #/app/config/private_key.pem"
+
+

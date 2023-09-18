@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+echo "Heroku Flexpack"
+exit 0
